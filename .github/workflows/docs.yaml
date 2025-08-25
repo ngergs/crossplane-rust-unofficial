@@ -1,0 +1,40 @@
+name: Docs
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: { }
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: docs
+  cancel-in-progress: false
+jobs:
+  build:
+    name: Publish docs to github-pages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Configure cache
+        uses: Swatinem/rust-cache@v2
+      - name: Setup pages
+        uses: actions/configure-pages@v5
+      - name: Build docs
+        run: |-
+          cd sdk
+          cargo doc --no-deps
+          rm target/doc/.lock
+        env:
+          # value not relevant for the docs, just need to be one concrete value for the `k8s-openapi` dependency
+          K8S_OPENAPI_ENABLED_VERSION: 1.33
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: sdk/target/doc
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
